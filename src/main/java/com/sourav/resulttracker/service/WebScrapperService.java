@@ -15,8 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.sourav.resulttracker.utils.TemplateConstants;
+
 @Service
-public class WebScrapperService {
+public class WebScrapperService implements TemplateConstants {
 
 	@Autowired
 	private ChromeDriver driver;
@@ -44,20 +46,17 @@ public class WebScrapperService {
 	private int rollSlice;
 	@Value("${gpa.slice.length}")
 	private int gpaSlice;
+	@Value("${start.roll.no}")
+	private long start;
+	@Value("${end.roll.no}")
+	private long end;
 
 	@PostConstruct
 	public void scrape() throws IOException {
 		Scanner sc = new Scanner(System.in);
-		// Specify the path of the location where you want the file to be created
 		FileWriter fileWriter = new FileWriter(path);
 		HashMap<String, Double> map = new HashMap<>();
-//		System.out.println("Enter the starting autonomy roll no. followed by ending roll no.");
-//		long start = sc.nextLong();
-//		long end = sc.nextLong();
-		long start = 12618013001l;
-		long end = 12618013010l;
 		for (long rollNum = start; rollNum <= end; rollNum++) {
-
 			try {
 				driver.get(url);
 				driver.findElementByName(semesterDropDown).sendKeys(String.valueOf(semNo));
@@ -68,22 +67,26 @@ public class WebScrapperService {
 				double gpa = Double.parseDouble(driver.findElementById(dgpaElement).getText().substring(gpaSlice));
 				String rollAndName = rollNo + "  " + name;
 				map.put(rollAndName, gpa);
-
 			} catch (Exception e) {
 				continue;
 			}
-
 		}
 		HashMap<String, Double> sortedMapDesc = sortBasedOnRank(map);
+		fileWriter.write(header);
 		for (Map.Entry<String, Double> entry : sortedMapDesc.entrySet()) {
 			// It will print this in console
-			System.out.printf("%s\t\t\t%s\n", entry.getKey(), entry.getValue());
-			fileWriter.write(entry.getKey() + "\t\t\t" + entry.getValue() + "\n");
+			System.out.printf("%-45s%s", entry.getKey(), entry.getValue() + "\n");
+			// This will write the details in the text file
+			fileWriter.write(String.format("%-45s%s", entry.getKey(), entry.getValue() + "\n"));
 		}
+		fileWriter.write("\n" + footer + "\n" + credits + "\n" + generationTime);
+		// It will flush all the values in text file and close the stream
 		fileWriter.close();
+		// It will clear the HashMap
 		map.clear();
 	}
 
+	// This method will sort the GPAs in descending order
 	private static HashMap<String, Double> sortBasedOnRank(HashMap<String, Double> hm) {
 		return hm.entrySet().stream().sorted((i1, i2) -> i2.getValue().compareTo(i1.getValue()))
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
