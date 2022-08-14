@@ -65,8 +65,7 @@ public class WebScrapperService implements TemplateConstants {
 				String name = driver.findElementById(nameElement).getText().substring(nameSlice);
 				String rollNo = driver.findElementById(rollElement).getText().substring(rollSlice);
 				double gpa = Double.parseDouble(driver.findElementById(dgpaElement).getText().substring(gpaSlice));
-				String rollAndName = rollNo + "  " + name;
-				map.put(rollAndName, gpa);
+				map.put(rollNo + "  " + name, gpa);
 			} catch (Exception e) {
 				continue;
 			}
